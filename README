@@ -1,0 +1,9 @@
+** Simple node.js implementation of an IRC client **
+
+Very simple IRC client programmed in node.js. Used in a tutorial node.js for a magazine I write for.
+
+Features:
+  * Basic initialization 
+  * Commands and chatbot (via http://www.pandorabots.com)
+
+Note: it does _not_ handle errors at all!
