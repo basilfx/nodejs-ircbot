@@ -12,13 +12,6 @@ var net = require("net");
 var irc = exports;
 
 /**
- * Simple log function with color coding for the prefix
- */
-var log = function(prefix, data) { 
-    console.log("\033[34;40;1m" + prefix + "\033[0m " + data); 
-};
-
-/**
  * Construct a new client with the given configuration.
  * 
  * Client does not connect (yet).
@@ -36,6 +29,18 @@ var Client = irc.Client = function(config) {
 }
 
 /**
+ * Simple log function to output to console with color coding for 
+ * the prefix, server, channels and our nickname.
+ */
+Client.prototype.log = function(prefix, data) { 
+    data = data.replace(/(#\S+)/g, "\033[32;40;1m$1\033[0m"); // Channels
+    data = data.replace(this.config.server, "\033[36;40;1m" + this.config.server + " \033[0m"); // Server
+    data = data.replace(this.config.nick, "\033[31;40;1m" + this.config.nick + " \033[0m"); // Nickname
+    
+    console.log("\033[34;40;1m" + prefix + "\033[0m " + data); 
+};
+
+/**
  * Connect to the configured server and send user details
  */
 Client.prototype.connect = function() {
@@ -44,7 +49,7 @@ Client.prototype.connect = function() {
     self.socket.connect(this.config.port, this.config.server);
 
     self.socket.on("connect", function() {
-        log("--", "Connected to " + self.config.server);
+        self.log("--", "Connected to " + self.config.server);
         
         self.send("NICK " + self.config.nick);
         self.send("USER " + self.config.user + " 8 * :" + self.config.real);
@@ -61,7 +66,7 @@ Client.prototype.connect = function() {
  * Newline is appended automatically
  */
 Client.prototype.send = function(data) {
-    log(">>", data);
+    this.log(">>", data);
     this.socket.write(data + "\n");
 }
 
@@ -155,7 +160,7 @@ Client.prototype.receive = function(data) {
 
 		var message = this.buffer.substr(0, offset);
 		this.buffer = this.buffer.substr(offset + 2);
-		log("<<", message);
+		this.log("<<", message);
 		
 		var match = message.match(/(?:(:[^\s]+) )?([^\s]+) (.+)/);
 		if (match) this.handleData(match);
