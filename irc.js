@@ -2,6 +2,8 @@
  * @author BasilFX <basstottelaar [at] gmail [dot] com
  * @version 1.0
  *
+ * Basic IRC client. Does not handle erros (yet)!
+ *
  * Modified from https://github.com/halfhalo/Node.js-IRC and
  * https://gist.github.com/996827. 
  */
@@ -9,10 +11,18 @@
 var net = require("net");
 var irc = exports;
 
+/**
+ * Simple log function with color coding for the prefix
+ */
 var log = function(prefix, data) { 
     console.log("\033[34;40;1m" + prefix + "\033[0m " + data); 
 };
 
+/**
+ * Construct a new client with the given configuration.
+ * 
+ * Client does not connect (yet).
+ */
 var Client = irc.Client = function(config) {
     var self = this;
     var socket = new net.Socket();
@@ -25,13 +35,16 @@ var Client = irc.Client = function(config) {
     this.buffer = "";
 }
 
+/**
+ * Connect to the configured server and send user details
+ */
 Client.prototype.connect = function() {
     var self = this;
     
     self.socket.connect(this.config.port, this.config.server);
 
     self.socket.on("connect", function() {
-        log("-", "Connected to " + self.config.server);
+        log("--", "Connected to " + self.config.server);
         
         self.send("NICK " + self.config.nick);
         self.send("USER " + self.config.user + " 8 * :" + self.config.real);
@@ -42,17 +55,28 @@ Client.prototype.connect = function() {
     self.socket.on("data", function (data) { self.receive(data) });
 }
 
+/**
+ * Send a IRC command to the server. 
+ *
+ * Newline is appended automatically
+ */
 Client.prototype.send = function(data) {
-    log(">", data);
+    log(">>", data);
     this.socket.write(data + "\n");
 }
 
+/**
+ * Handle incoming commands.
+ *
+ * List of commands is only partially implemented!
+ */
 Client.prototype.handleData = function(match) {
 	var parameters = match[3].match(/(.*?) ?:(.*)/) || null;
 	var info = match[0].match(/^:(.+)!~(.+)@(.+)/) || null;
 	
 	switch (match[2]) {
 		case "JOIN":
+		    // Determine if we have joined, or someone else
 		    if (info[1] == this.config.nick)
 			    this.onJoin(parameters[2]);
 			else
@@ -95,8 +119,8 @@ Client.prototype.handleData = function(match) {
 		case "250":
 		case "251":
 		case "255":
-		//case "265":
-		//case "266":
+		case "265":
+		case "266":
 		case "303":
 		case "315":
 		case "332":
@@ -117,6 +141,11 @@ Client.prototype.handleData = function(match) {
 	}
 }
 
+/** 
+ * Handle incoming data from the socket. 
+ *
+ * Buffers data if needed
+ */
 Client.prototype.receive = function(data) {
     this.buffer = this.buffer + data;
 
@@ -126,17 +155,23 @@ Client.prototype.receive = function(data) {
 
 		var message = this.buffer.substr(0, offset);
 		this.buffer = this.buffer.substr(offset + 2);
-		log("<", message);
+		log("<<", message);
 		
 		var match = message.match(/(?:(:[^\s]+) )?([^\s]+) (.+)/);
 		if (match) this.handleData(match);
 	}
 }
 
+/**
+ * Join a given channel
+ */
 Client.prototype.join = function(channel) {    
     this.send("JOIN " + channel);
 }
 
+/**
+ * Send a message to a given channel or a user (instead of channel)
+ */
 Client.prototype.message = function(channel, message) {
     var maxLength = 500 - channel.length;
     var data = message.match(new RegExp(".{1," + maxLength + "}", "g"));
@@ -145,9 +180,12 @@ Client.prototype.message = function(channel, message) {
         this.send("PRIVMSG " + channel + " :" + data[i]);
 }
 
-Client.prototype.onPing = function() { }
-Client.prototype.onJoin = function(channel) { }
-Client.prototype.onUserJoin = function(channel, nick) { }
-Client.prototype.onMessage = function(channel, nick, message) { }
-Client.prototype.onConnect = function() { }
-Client.prototype.onWelcome = function() { }
+/**
+ * Override please
+ */
+Client.prototype.onPing = function() {}
+Client.prototype.onJoin = function(channel) {}
+Client.prototype.onUserJoin = function(channel, nick) {}
+Client.prototype.onMessage = function(channel, nick, message) {}
+Client.prototype.onConnect = function() {}
+Client.prototype.onWelcome = function() {}
