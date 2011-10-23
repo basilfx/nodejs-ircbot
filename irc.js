@@ -17,7 +17,6 @@ var irc = exports;
  * Client does not connect (yet).
  */
 var Client = irc.Client = function(config) {
-    var self = this;
     var socket = new net.Socket();
     
     socket.setEncoding("ascii");
@@ -34,8 +33,8 @@ var Client = irc.Client = function(config) {
  */
 Client.prototype.log = function(prefix, data) { 
     data = data.replace(/(#\S+)/g, "\033[32;40;1m$1\033[0m"); // Channels
-    data = data.replace(this.config.server, "\033[36;40;1m" + this.config.server + " \033[0m"); // Server
-    data = data.replace(this.config.nick, "\033[31;40;1m" + this.config.nick + " \033[0m"); // Nickname
+    data = data.replace(this.config.server, "\033[36;40;1m" + this.config.server + "\033[0m"); // Server
+    data = data.replace(this.config.nick, "\033[31;40;1m" + this.config.nick + "\033[0m"); // Nickname
     
     console.log("\033[34;40;1m" + prefix + "\033[0m " + data); 
 };
